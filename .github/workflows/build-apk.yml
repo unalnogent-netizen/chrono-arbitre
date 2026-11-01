@@ -1,0 +1,46 @@
+
+name: Build Chrono Arbitre APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Recuperer le projet
+        uses: actions/checkout@v4
+
+      - name: Installer Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Installer Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Installer Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Extraire le projet
+        run: |
+          mkdir source
+          unzip -q chrono-arbitre-main.zip -d source
+          sed -i 's/minSdk = 30/minSdk = 26/' source/app/build.gradle.kts
+
+      - name: Compiler APK
+        run: |
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          gradle -p source assembleDebug
+
+      - name: Recuperer APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chrono-Arbitre-APK
+          path: source/app/build/outputs/apk/debug/app-debug.apk
