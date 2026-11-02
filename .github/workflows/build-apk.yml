@@ -62,8 +62,33 @@ jobs:
 
           if [[ "$GRADLE_FILE" == *.kts ]]; then
             sed -i 's/minSdk = 30/minSdk = 26/' "$GRADLE_FILE"
+
+            cat >> "$GRADLE_FILE" <<'EOF'
+
+          tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+              kotlinOptions.jvmTarget = "17"
+          }
+
+          tasks.withType<JavaCompile>().configureEach {
+              sourceCompatibility = "17"
+              targetCompatibility = "17"
+          }
+          EOF
+
           else
             sed -i 's/minSdkVersion 30/minSdkVersion 26/' "$GRADLE_FILE"
+
+            cat >> "$GRADLE_FILE" <<'EOF'
+
+          tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+              kotlinOptions.jvmTarget = "17"
+          }
+
+          tasks.withType(JavaCompile).configureEach {
+              sourceCompatibility = "17"
+              targetCompatibility = "17"
+          }
+          EOF
           fi
 
           echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
