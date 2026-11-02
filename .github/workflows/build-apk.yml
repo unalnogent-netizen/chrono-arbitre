@@ -61,6 +61,7 @@ jobs:
           echo "Projet trouve : $PROJECT_DIR"
 
           if [[ "$GRADLE_FILE" == *.kts ]]; then
+
             sed -i 's/minSdk = 30/minSdk = 26/' "$GRADLE_FILE"
             sed -i 's/VERSION_1_8/VERSION_17/g' "$GRADLE_FILE"
             sed -i 's/"1\.8"/"17"/g' "$GRADLE_FILE"
@@ -68,12 +69,25 @@ jobs:
 
             cat >> "$GRADLE_FILE" <<'EOF'
 
+          android {
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+          }
+
+          tasks.withType<JavaCompile>().configureEach {
+              sourceCompatibility = "17"
+              targetCompatibility = "17"
+          }
+
           tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
               kotlinOptions.jvmTarget = "17"
           }
           EOF
 
           else
+
             sed -i 's/minSdkVersion 30/minSdkVersion 26/' "$GRADLE_FILE"
             sed -i 's/VERSION_1_8/VERSION_17/g' "$GRADLE_FILE"
             sed -i 's/"1\.8"/"17"/g' "$GRADLE_FILE"
@@ -81,15 +95,30 @@ jobs:
 
             cat >> "$GRADLE_FILE" <<'EOF'
 
+          android {
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+
+          tasks.withType(JavaCompile).configureEach {
+              sourceCompatibility = "17"
+              targetCompatibility = "17"
+          }
+
           tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
               kotlinOptions.jvmTarget = "17"
           }
           EOF
+
           fi
 
           echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
 
           echo "Configuration Java/Kotlin terminee"
+          echo "Contenu du fichier Gradle :"
+          cat "$GRADLE_FILE"
 
       - name: Compiler APK
         run: |
