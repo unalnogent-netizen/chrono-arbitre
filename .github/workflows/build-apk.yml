@@ -34,15 +34,31 @@ jobs:
         run: |
           mkdir source
           unzip -q chrono-arbitre-main.zip -d source
-          sed -i 's/minSdk = 30/minSdk = 26/' source/app/build.gradle.kts
+
+          GRADLE_FILE=$(find source -name build.gradle.kts -path '*/app/build.gradle.kts' | head -n 1)
+
+          if [ -z "$GRADLE_FILE" ]; then
+            echo "ERREUR : fichier app/build.gradle.kts introuvable"
+            echo "Contenu du ZIP :"
+            find source -maxdepth 4 -type f
+            exit 1
+          fi
+
+          PROJECT_DIR=$(dirname "$(dirname "$GRADLE_FILE")")
+          echo "Projet Android trouvé dans : $PROJECT_DIR"
+
+          sed -i 's/minSdk = 30/minSdk = 26/' "$GRADLE_FILE"
+
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
 
       - name: Compiler APK
         run: |
           sdkmanager "platforms;android-35" "build-tools;35.0.0"
-          gradle -p source assembleDebug
+          gradle -p "$PROJECT_DIR" assembleDebug
 
       - name: Recuperer APK
         uses: actions/upload-artifact@v4
         with:
           name: Chrono-Arbitre-APK
-          path: source/app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
