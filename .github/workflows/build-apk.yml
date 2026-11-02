@@ -35,19 +35,36 @@ jobs:
           mkdir source
           unzip -q chrono-arbitre-main.zip -d source
 
-          GRADLE_FILE=$(find source -name build.gradle.kts -path '*/app/build.gradle.kts' | head -n 1)
+          INNER_ZIP=$(find source -name 'Chronometre_Arbitre_WearOS_v2.zip' | head -n 1)
+
+          if [ -z "$INNER_ZIP" ]; then
+            echo "ERREUR : ZIP Android introuvable"
+            exit 1
+          fi
+
+          unzip -q "$INNER_ZIP" -d source/android
+
+          GRADLE_FILE=$(find source/android -name build.gradle.kts -path '*/app/build.gradle.kts' | head -n 1)
 
           if [ -z "$GRADLE_FILE" ]; then
-            echo "ERREUR : fichier app/build.gradle.kts introuvable"
-            echo "Contenu du ZIP :"
-            find source -maxdepth 4 -type f
+            GRADLE_FILE=$(find source/android -name build.gradle -path '*/app/build.gradle' | head -n 1)
+          fi
+
+          if [ -z "$GRADLE_FILE" ]; then
+            echo "ERREUR : projet Android introuvable"
+            find source/android -maxdepth 5 -type f
             exit 1
           fi
 
           PROJECT_DIR=$(dirname "$(dirname "$GRADLE_FILE")")
-          echo "Projet Android trouvé dans : $PROJECT_DIR"
 
-          sed -i 's/minSdk = 30/minSdk = 26/' "$GRADLE_FILE"
+          echo "Projet trouve : $PROJECT_DIR"
+
+          if [[ "$GRADLE_FILE" == *.kts ]]; then
+            sed -i 's/minSdk = 30/minSdk = 26/' "$GRADLE_FILE"
+          else
+            sed -i 's/minSdkVersion 30/minSdkVersion 26/' "$GRADLE_FILE"
+          fi
 
           echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
 
